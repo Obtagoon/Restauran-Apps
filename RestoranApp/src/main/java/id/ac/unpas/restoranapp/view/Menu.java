@@ -1,9 +1,7 @@
 package id.ac.unpas.restoranapp.view;
 
-import controller.MenuController;
-import controller.KategoriController;
-import model.Menu;
-import model.Kategori;
+import id.ac.unpas.restoranapp.controller.MenuController;
+import id.ac.unpas.restoranapp.controller.KategoriController;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;

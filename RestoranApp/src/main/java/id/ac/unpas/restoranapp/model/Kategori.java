@@ -25,12 +25,24 @@ public class Kategori {
     }
 
     // Getter & Setter
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public int getId() { 
+        return id; 
+    }
+    public void setId(int id) { 
+        this.id = id; 
+    }
 
-    public String getNamaKategori() { return namaKategori; }
-    public void setNamaKategori(String namaKategori) { this.namaKategori = namaKategori; }
+    public String getNamaKategori() { 
+        return namaKategori; 
+    }
+    public void setNamaKategori(String namaKategori) { 
+        this.namaKategori = namaKategori; 
+    }
 
-    public String getDeskripsi() { return deskripsi; }
-    public void setDeskripsi(String deskripsi) { this.deskripsi = deskripsi; }
+    public String getDeskripsi() { 
+        return deskripsi; 
+    }
+    public void setDeskripsi(String deskripsi) { 
+        this.deskripsi = deskripsi; 
+    }
 }

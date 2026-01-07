@@ -1,10 +1,6 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package id.ac.unpas.restoranapp.controller;
 
-import com.mysql.cj.xdevapi.Statement;
+import java.sql.Statement;
 import id.ac.unpas.restoranapp.database.KoneksiDB;
 import id.ac.unpas.restoranapp.model.Kategori;
 import java.sql.Connection;
