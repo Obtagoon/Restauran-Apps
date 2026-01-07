@@ -1,33 +1,55 @@
-package id.ac.unpas.restoranapp;
-import id.ac.unpas.restoranapp.controller.MenuController;
-import id.ac.unpas.restoranapp.controller.KategoriController;
-import id.ac.unpas.restoranapp.model.MenuModel;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+package id.ac.unpas.restoranapp.view;
 
-public class MenuView extends JPanel{
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+import id.ac.unpas.restoranapp.controller.MenuController;
+import id.ac.unpas.restoranapp.controller.PesananController;
+import id.ac.unpas.restoranapp.model.MenuModel;
+import id.ac.unpas.restoranapp.model.PesananModel;
+
+public class PesananView extends JPanel{
+    private PesananController pesananController;
     private MenuController menuController;
-    private KategoriController kategoriController;
 
     // Komponen form input
-    private JTextField txtNamaMenu, txtHarga;
-    private JComboBox<String> cmbKategori;
-    private JTextArea txtDeskripsi;
-    private JCheckBox chkTersedia;
-    private JButton btnInsert, btnUpdate, btnDelete, btnClear;
+    private JTextField txtNomorMeja, txtJumlah;
+    private JComboBox<MenuModel> cmbMenu; // Use MenuModel
+    private JComboBox<String> cmbStatus;
+    private JLabel lblHargaSatuan, lblTotalHarga;
+    private JButton btnTambah, btnUpdate, btnHapus, btnBersihkan;
 
     // Komponen tabel
-    private JTable tableMenu;
+    private JTable tablePesanan;
     private DefaultTableModel tableModel;
 
     private int selectedId = -1;
 
-    public MenuView() {
+    public PesananView() {
+        pesananController = new PesananController();
         menuController = new MenuController();
-        kategoriController = new KategoriController();
         initComponents();
-        loadKategoriComboBox();
+        loadMenuComboBox();
         loadTableData();
     }
 
@@ -37,154 +59,219 @@ public class MenuView extends JPanel{
 
         // Panel Form Input
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createTitledBorder("Form Menu"));
+        formPanel.setBorder(BorderFactory.createTitledBorder("Form Pesanan"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Nama Menu
+        // Nomor Meja
         gbc.gridx = 0; gbc.gridy = 0;
-        formPanel.add(new JLabel("Nama Menu:"), gbc);
+        formPanel.add(new JLabel("Nomor Meja:"), gbc);
 
         gbc.gridx = 1; gbc.weightx = 1.0;
-        txtNamaMenu = new JTextField(20);
-        formPanel.add(txtNamaMenu, gbc);
+        txtNomorMeja = new JTextField(20);
+        formPanel.add(txtNomorMeja, gbc);
 
-        // Kategori
+        // Menu
         gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
-        formPanel.add(new JLabel("Kategori:"), gbc);
+        formPanel.add(new JLabel("Menu:"), gbc);
 
         gbc.gridx = 1; gbc.weightx = 1.0;
-        cmbKategori = new JComboBox<>();
-        formPanel.add(cmbKategori, gbc);
+        cmbMenu = new JComboBox<>();
+        // Custom Renderer
+        cmbMenu.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof MenuModel) {
+                    setText(((MenuModel) value).getNamaMenu());
+                }
+                return this;
+            }
+        });
+        // Event listener untuk update harga saat menu dipilih
+        cmbMenu.addActionListener(e -> updateHargaInfo());
+        formPanel.add(cmbMenu, gbc);
 
-        // Harga
+        // Harga Satuan (Read-only, otomatis dari menu)
         gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0;
-        formPanel.add(new JLabel("Harga:"), gbc);
+        formPanel.add(new JLabel("Harga Satuan:"), gbc);
 
         gbc.gridx = 1; gbc.weightx = 1.0;
-        txtHarga = new JTextField(20);
-        formPanel.add(txtHarga, gbc);
+        lblHargaSatuan = new JLabel("Rp 0");
+        lblHargaSatuan.setFont(new Font("Arial", Font.BOLD, 12));
+        formPanel.add(lblHargaSatuan, gbc);
 
-        // Deskripsi
+        // Jumlah
         gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0;
-        formPanel.add(new JLabel("Deskripsi:"), gbc);
+        formPanel.add(new JLabel("Jumlah:"), gbc);
 
         gbc.gridx = 1; gbc.weightx = 1.0;
-        txtDeskripsi = new JTextArea(3, 20);
-        txtDeskripsi.setLineWrap(true);
-        JScrollPane scrollDesc = new JScrollPane(txtDeskripsi);
-        formPanel.add(scrollDesc, gbc);
+        txtJumlah = new JTextField(20);
+        // Event listener untuk hitung total otomatis
+        txtJumlah.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                hitungTotalHarga();
+            }
+        });
+        formPanel.add(txtJumlah, gbc);
 
-        // Tersedia
+        // Total Harga (Otomatis dihitung)
         gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0;
-        formPanel.add(new JLabel("Tersedia:"), gbc);
+        formPanel.add(new JLabel("Total Harga:"), gbc);
 
         gbc.gridx = 1; gbc.weightx = 1.0;
-        chkTersedia = new JCheckBox("Menu tersedia untuk dipesan");
-        chkTersedia.setSelected(true);
-        formPanel.add(chkTersedia, gbc);
+        lblTotalHarga = new JLabel("Rp 0");
+        lblTotalHarga.setFont(new Font("Arial", Font.BOLD, 14));
+        lblTotalHarga.setForeground(Color.BLUE);
+        formPanel.add(lblTotalHarga, gbc);
+
+        // Status
+        gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0;
+        formPanel.add(new JLabel("Status:"), gbc);
+
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        String[] statusOptions = {"Pending", "Selesai", "Dibatalkan"};
+        cmbStatus = new JComboBox<>(statusOptions);
+        formPanel.add(cmbStatus, gbc);
 
         // Panel Button
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        btnInsert = new JButton("Tambah");
+        btnTambah = new JButton("Tambah");
         btnUpdate = new JButton("Update");
-        btnDelete = new JButton("Hapus");
-        btnClear = new JButton("Bersihkan");
+        btnHapus = new JButton("Hapus");
+        btnBersihkan = new JButton("Bersihkan");
 
-        buttonPanel.add(btnInsert);
+        buttonPanel.add(btnTambah);
         buttonPanel.add(btnUpdate);
-        buttonPanel.add(btnDelete);
-        buttonPanel.add(btnClear);
+        buttonPanel.add(btnHapus);
+        buttonPanel.add(btnBersihkan);
 
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
+        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2;
         formPanel.add(buttonPanel, gbc);
 
         // Panel Tabel
         JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.setBorder(BorderFactory.createTitledBorder("Data Menu"));
+        tablePanel.setBorder(BorderFactory.createTitledBorder("Data Pesanan"));
 
-        String[] columnNames = {"ID", "Kategori ID", "Nama Menu", "Harga", "Deskripsi", "Status"};
+        String[] columnNames = {"ID", "No. Meja", "Menu", "Jumlah", "Total Harga", "Status", "Tanggal"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
-        tableMenu = new JTable(tableModel);
-        tableMenu.getSelectionModel().addListSelectionListener(e -> {
+        tablePesanan = new JTable(tableModel);
+        tablePesanan.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 selectTableRow();
             }
         });
 
-        JScrollPane scrollTable = new JScrollPane(tableMenu);
+        JScrollPane scrollTable = new JScrollPane(tablePesanan);
         tablePanel.add(scrollTable, BorderLayout.CENTER);
+
+        // Panel info total pendapatan
+        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JLabel lblInfo = new JLabel("Total Pendapatan (Selesai): ");
+        JLabel lblPendapatan = new JLabel("Rp 0");
+        lblPendapatan.setFont(new Font("Arial", Font.BOLD, 14));
+        lblPendapatan.setForeground(new Color(0, 128, 0));
+        infoPanel.add(lblInfo);
+        infoPanel.add(lblPendapatan);
+        tablePanel.add(infoPanel, BorderLayout.SOUTH);
 
         add(formPanel, BorderLayout.NORTH);
         add(tablePanel, BorderLayout.CENTER);
 
         // Event listener
-        btnInsert.addActionListener(e -> tambahMenu());
-        btnUpdate.addActionListener(e -> updateMenu());
-        btnDelete.addActionListener(e -> hapusMenu());
-        btnClear.addActionListener(e -> bersihkanForm());
+        btnTambah.addActionListener(e -> {
+            tambahPesanan();
+            updatePendapatan(lblPendapatan);
+        });
+        btnUpdate.addActionListener(e -> {
+            updatePesanan();
+            updatePendapatan(lblPendapatan);
+        });
+        btnHapus.addActionListener(e -> {
+            hapusPesanan();
+            updatePendapatan(lblPendapatan);
+        });
+        btnBersihkan.addActionListener(e -> bersihkanForm());
+
+        // Update pendapatan awal
+        updatePendapatan(lblPendapatan);
     }
 
-    // Load data kategori ke ComboBox
-    private void loadKategoriComboBox() {
-        cmbKategori.removeAllItems();
-        DefaultTableModel kategoriModel = kategoriController.getAllKategori();
-
-        for (int i = 0; i < kategoriModel.getRowCount(); i++) {
-            int id = (int) kategoriModel.getValueAt(i, 0);
-            String nama = (String) kategoriModel.getValueAt(i, 1);
-            cmbKategori.addItem(id + " - " + nama);
+    // Load data menu ke ComboBox (hanya menu yang tersedia)
+    private void loadMenuComboBox() {
+        cmbMenu.removeAllItems();
+        List<MenuModel> menuList = menuController.getAllMenuList();
+        for (MenuModel m : menuList) {
+            if (m.isTersedia()) { // Hanya menu yang tersedia
+                cmbMenu.addItem(m);
+            }
         }
     }
 
-    // Ambil kategori ID dari ComboBox
-    private int getSelectedKategoriId() {
-        String selected = (String) cmbKategori.getSelectedItem();
-        if (selected != null) {
-            return Integer.parseInt(selected.split(" - ")[0]);
+    // Update info harga saat menu dipilih
+    private void updateHargaInfo() {
+        MenuModel selectedMenu = (MenuModel) cmbMenu.getSelectedItem();
+        if (selectedMenu != null) {
+            lblHargaSatuan.setText(String.format("Rp %.2f", selectedMenu.getHarga()));
+            hitungTotalHarga();
         }
-        return -1;
+    }
+
+    // Hitung total harga otomatis
+    private void hitungTotalHarga() {
+        try {
+            MenuModel selectedMenu = (MenuModel) cmbMenu.getSelectedItem();
+            if (selectedMenu != null && !txtJumlah.getText().trim().isEmpty()) {
+                int jumlah = Integer.parseInt(txtJumlah.getText().trim());
+                double total = selectedMenu.getHarga() * jumlah;
+                lblTotalHarga.setText(String.format("Rp %.2f", total));
+            } else {
+                lblTotalHarga.setText("Rp 0");
+            }
+        } catch (NumberFormatException e) {
+            lblTotalHarga.setText("Rp 0");
+        }
     }
 
     // Validasi input
     private boolean validateInput() {
-        // Validasi nama menu
-        if (txtNamaMenu.getText().trim().isEmpty()) {
+        // Validasi nomor meja
+        if (txtNomorMeja.getText().trim().isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                    "Nama menu tidak boleh kosong!",
+                    "Nomor meja tidak boleh kosong!",
                     "Validasi Error",
                     JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
-        // Validasi kategori
-        if (cmbKategori.getSelectedItem() == null) {
+        // Validasi menu
+        if (cmbMenu.getSelectedItem() == null) {
             JOptionPane.showMessageDialog(this,
-                    "Pilih kategori menu!",
+                    "Pilih menu!",
                     "Validasi Error",
                     JOptionPane.ERROR_MESSAGE);
             return false;
         }
 
-        // Validasi harga
+        // Validasi jumlah
         try {
-            double harga = Double.parseDouble(txtHarga.getText().trim());
-            if (harga <= 0) {
+            int jumlah = Integer.parseInt(txtJumlah.getText().trim());
+            if (jumlah <= 0) {
                 JOptionPane.showMessageDialog(this,
-                        "Harga harus lebih dari 0!",
+                        "Jumlah harus lebih dari 0!",
                         "Validasi Error",
                         JOptionPane.ERROR_MESSAGE);
                 return false;
             }
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this,
-                    "Harga harus berupa angka!",
+                    "Jumlah harus berupa angka!",
                     "Validasi Error",
                     JOptionPane.ERROR_MESSAGE);
             return false;
@@ -194,30 +281,32 @@ public class MenuView extends JPanel{
     }
 
     // Method CREATE
-    private void tambahMenu() {
+    private void tambahPesanan() {
         if (!validateInput()) return;
 
-        MenuModel menu = new MenuModel();
-        menu.setKategoriId(getSelectedKategoriId());
-        menu.setNamaMenu(txtNamaMenu.getText().trim());
-        menu.setHarga(Double.parseDouble(txtHarga.getText().trim()));
-        menu.setDeskripsi(txtDeskripsi.getText().trim());
-        menu.setTersedia(chkTersedia.isSelected());
+        MenuModel selectedMenu = (MenuModel) cmbMenu.getSelectedItem();
+        int jumlah = Integer.parseInt(txtJumlah.getText().trim());
+        double totalHarga = selectedMenu.getHarga() * jumlah;
 
-        String result = menuController.insert(menu);
+        PesananModel pesanan = new PesananModel();
+        pesanan.setNomorMeja(txtNomorMeja.getText().trim());
+        pesanan.setMenuId(selectedMenu.getId());
+        pesanan.setJumlah(jumlah);
+        pesanan.setTotalHarga(totalHarga);
+        pesanan.setStatus((String) cmbStatus.getSelectedItem());
 
-        if (result.contains("Berhasil")) {
-            JOptionPane.showMessageDialog(this, result);
+        if (pesananController.insert(pesanan).contains("Pesanan dibuat")) {
+            JOptionPane.showMessageDialog(this, "Pesanan berhasil ditambahkan!");
             loadTableData();
             bersihkanForm();
         } else {
-            JOptionPane.showMessageDialog(this, result,
+            JOptionPane.showMessageDialog(this, "Gagal menambahkan pesanan!",
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     // Method UPDATE
-    private void updateMenu() {
+    private void updatePesanan() {
         if (selectedId == -1) {
             JOptionPane.showMessageDialog(this,
                     "Pilih data yang akan diupdate!",
@@ -228,28 +317,33 @@ public class MenuView extends JPanel{
 
         if (!validateInput()) return;
 
-        MenuModel menu = new MenuModel();
-        menu.setId(selectedId);
-        menu.setKategoriId(getSelectedKategoriId());
-        menu.setNamaMenu(txtNamaMenu.getText().trim());
-        menu.setHarga(Double.parseDouble(txtHarga.getText().trim()));
-        menu.setDeskripsi(txtDeskripsi.getText().trim());
-        menu.setTersedia(chkTersedia.isSelected());
+        MenuModel selectedMenu = (MenuModel) cmbMenu.getSelectedItem();
+        int jumlah = Integer.parseInt(txtJumlah.getText().trim());
+        double totalHarga = selectedMenu.getHarga() * jumlah;
 
-        String result = menuController.update(menu);
+        PesananModel pesanan = new PesananModel();
+        pesanan.setId(selectedId);
+        pesanan.setNomorMeja(txtNomorMeja.getText().trim());
+        pesanan.setMenuId(selectedMenu.getId());
+        pesanan.setJumlah(jumlah);
+        pesanan.setTotalHarga(totalHarga);
+        pesanan.setStatus((String) cmbStatus.getSelectedItem());
 
-        if (result.contains("Berhasil")) {
-            JOptionPane.showMessageDialog(this, result);
-            loadTableData();
-            bersihkanForm();
+        // Note: Controller update method might be different allow only Status update based on previous findings.
+        // We assume updateStatus is available or we implement handling similar to previous.
+        // If controller only has updateStatus, we check here.
+        if (pesananController.updateStatus(selectedId, (String) cmbStatus.getSelectedItem()).contains("berhasil")) {
+             JOptionPane.showMessageDialog(this, "Status Pesanan berhasil diupdate! (Hanya Status)");
+             loadTableData();
+             bersihkanForm();
         } else {
-            JOptionPane.showMessageDialog(this, result,
-                    "Error", JOptionPane.ERROR_MESSAGE);
+             JOptionPane.showMessageDialog(this, "Gagal mengupdate pesanan!",
+                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     // Method DELETE
-    private void hapusMenu() {
+    private void hapusPesanan() {
         if (selectedId == -1) {
             JOptionPane.showMessageDialog(this,
                     "Pilih data yang akan dihapus!",
@@ -259,19 +353,17 @@ public class MenuView extends JPanel{
         }
 
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Apakah Anda yakin ingin menghapus menu ini?",
+                "Apakah Anda yakin ingin menghapus pesanan ini?",
                 "Konfirmasi Hapus",
                 JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            String result = menuController.delete(selectedId);
-
-            if (result.contains("Berhasil")) {
-                JOptionPane.showMessageDialog(this, result);
+            if (pesananController.delete(selectedId).contains("dihapus")) {
+                JOptionPane.showMessageDialog(this, "Pesanan berhasil dihapus!");
                 loadTableData();
                 bersihkanForm();
             } else {
-                JOptionPane.showMessageDialog(this, result,
+                JOptionPane.showMessageDialog(this, "Gagal menghapus pesanan!",
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -279,48 +371,65 @@ public class MenuView extends JPanel{
 
     // Load data ke tabel
     private void loadTableData() {
-        tableModel = menuController.getAllMenu();
-        tableMenu.setModel(tableModel);
+        tableModel.setRowCount(0);
+        List<PesananModel> pesananList = pesananController.getAllPesananList();
+
+        for (PesananModel p : pesananList) {
+            Object[] row = {
+                    p.getId(),
+                    p.getNomorMeja(),
+                    p.getNamaMenu(), // Sekarang sudah ada field ini di PesananModel
+                    p.getJumlah(),
+                    String.format("Rp %.2f", p.getTotalHarga()),
+                    p.getStatus(),
+                    p.getTanggalPesan() != null ? p.getTanggalPesan().toString() : "-"
+            };
+            tableModel.addRow(row);
+        }
     }
 
     // Select baris tabel
     private void selectTableRow() {
-        int selectedRow = tableMenu.getSelectedRow();
+        int selectedRow = tablePesanan.getSelectedRow();
         if (selectedRow != -1) {
             selectedId = (int) tableModel.getValueAt(selectedRow, 0);
-            int kategoriId = (int) tableModel.getValueAt(selectedRow, 1);
+            txtNomorMeja.setText((String) tableModel.getValueAt(selectedRow, 1));
+
             String namaMenu = (String) tableModel.getValueAt(selectedRow, 2);
-            double harga = (double) tableModel.getValueAt(selectedRow, 3);
-            String deskripsi = (String) tableModel.getValueAt(selectedRow, 4);
-            String status = (String) tableModel.getValueAt(selectedRow, 5);
-
-            txtNamaMenu.setText(namaMenu);
-            txtHarga.setText(String.valueOf(harga));
-            txtDeskripsi.setText(deskripsi);
-            chkTersedia.setSelected(status.equals("Tersedia"));
-
-            // Set selected kategori di combobox
-            for (int i = 0; i < cmbKategori.getItemCount(); i++) {
-                String item = cmbKategori.getItemAt(i);
-                int id = Integer.parseInt(item.split(" - ")[0]);
-                if (id == kategoriId) {
-                    cmbKategori.setSelectedIndex(i);
+            for (int i = 0; i < cmbMenu.getItemCount(); i++) {
+                MenuModel m = cmbMenu.getItemAt(i);
+                if (m.getNamaMenu().equalsIgnoreCase(namaMenu)) {
+                    cmbMenu.setSelectedIndex(i);
                     break;
                 }
             }
+
+            txtJumlah.setText(String.valueOf(tableModel.getValueAt(selectedRow, 3)));
+
+            String status = (String) tableModel.getValueAt(selectedRow, 5);
+            cmbStatus.setSelectedItem(status);
+
+            hitungTotalHarga();
         }
+    }
+
+    // Update total pendapatan
+    private void updatePendapatan(JLabel lblPendapatan) {
+        double total = pesananController.getTotalPendapatan();
+        lblPendapatan.setText(String.format("Rp %.2f", total));
     }
 
     // Bersihkan form
     private void bersihkanForm() {
         selectedId = -1;
-        txtNamaMenu.setText("");
-        txtHarga.setText("");
-        txtDeskripsi.setText("");
-        chkTersedia.setSelected(true);
-        if (cmbKategori.getItemCount() > 0) {
-            cmbKategori.setSelectedIndex(0);
+        txtNomorMeja.setText("");
+        txtJumlah.setText("");
+        lblHargaSatuan.setText("Rp 0");
+        lblTotalHarga.setText("Rp 0");
+        if (cmbMenu.getItemCount() > 0) {
+            cmbMenu.setSelectedIndex(0);
         }
-        tableMenu.clearSelection();
+        cmbStatus.setSelectedIndex(0);
+        tablePesanan.clearSelection();
     }
 }
