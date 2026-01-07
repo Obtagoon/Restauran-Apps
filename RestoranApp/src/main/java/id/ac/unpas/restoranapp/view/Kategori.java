@@ -1,19 +1,25 @@
 package id.ac.unpas.restoranapp.view;
 
-import id.ac.unpas.restoranapp.controller.KategoriController;
-
+import controller.KategoriController;
+import model.Kategori;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 public class Kategori extends JPanel {
     private KategoriController controller;
 
-    // Komponen UI
+    // Komponen form input
     private JTextField txtNamaKategori;
     private JTextArea txtDeskripsi;
     private JButton btnTambah, btnUpdate, btnHapus, btnBersihkan;
+
+    // Komponen tabel
     private JTable tableKategori;
+    private DefaultTableModel tableModel;
+
+    // Variable untuk menyimpan ID saat update
     private int selectedId = -1;
 
     public Kategori() {
@@ -21,119 +27,220 @@ public class Kategori extends JPanel {
         initComponents();
         loadTableData();
     }
-
     private void initComponents() {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // --- Form ---
+        // Panel Form Input (Bagian Atas)
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(BorderFactory.createTitledBorder("Form Kategori"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // Nama Kategori
         gbc.gridx = 0; gbc.gridy = 0;
         formPanel.add(new JLabel("Nama Kategori:"), gbc);
+
         gbc.gridx = 1; gbc.weightx = 1.0;
         txtNamaKategori = new JTextField(20);
         formPanel.add(txtNamaKategori, gbc);
 
+        // Deskripsi
         gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
         formPanel.add(new JLabel("Deskripsi:"), gbc);
+
         gbc.gridx = 1; gbc.weightx = 1.0;
         txtDeskripsi = new JTextArea(3, 20);
         txtDeskripsi.setLineWrap(true);
-        formPanel.add(new JScrollPane(txtDeskripsi), gbc);
+        JScrollPane scrollDesc = new JScrollPane(txtDeskripsi);
+        formPanel.add(scrollDesc, gbc);
 
-        // --- Tombol ---
+        // Panel Button
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         btnTambah = new JButton("Tambah");
         btnUpdate = new JButton("Update");
         btnHapus = new JButton("Hapus");
         btnBersihkan = new JButton("Bersihkan");
-        buttonPanel.add(btnTambah); 
-        buttonPanel.add(btnUpdate); 
-        buttonPanel.add(btnHapus); 
+
+        buttonPanel.add(btnTambah);
+        buttonPanel.add(btnUpdate);
+        buttonPanel.add(btnHapus);
         buttonPanel.add(btnBersihkan);
-        
+
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
         formPanel.add(buttonPanel, gbc);
 
-        // --- Tabel ---
+        // Panel Tabel (Bagian Tengah)
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBorder(BorderFactory.createTitledBorder("Data Kategori"));
-        tableKategori = new JTable();
-        // Listener saat baris diklik
-        tableKategori.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) selectTableRow();
-        });
-        tablePanel.add(new JScrollPane(tableKategori), BorderLayout.CENTER);
 
+        // Buat tabel dengan kolom
+        String[] columnNames = {"ID", "Nama Kategori", "Deskripsi"};
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Tabel tidak bisa diedit langsung
+            }
+        };
+        tableKategori = new JTable(tableModel);
+        tableKategori.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                selectTableRow();
+            }
+        });
+
+        JScrollPane scrollTable = new JScrollPane(tableKategori);
+        tablePanel.add(scrollTable, BorderLayout.CENTER);
+
+        // Tambahkan komponen ke panel utama
         add(formPanel, BorderLayout.NORTH);
         add(tablePanel, BorderLayout.CENTER);
 
-        // Event Listener
+        // Event listener untuk button
         btnTambah.addActionListener(e -> tambahKategori());
         btnUpdate.addActionListener(e -> updateKategori());
         btnHapus.addActionListener(e -> hapusKategori());
         btnBersihkan.addActionListener(e -> bersihkanForm());
     }
 
-    private void tambahKategori() {
+    // Method untuk validasi input
+    private boolean validateInput() {
         if (txtNamaKategori.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Nama tidak boleh kosong!");
+            JOptionPane.showMessageDialog(this,
+                    "Nama kategori tidak boleh kosong!",
+                    "Validasi Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        if (txtNamaKategori.getText().trim().length() < 3) {
+            JOptionPane.showMessageDialog(this,
+                    "Nama kategori minimal 3 karakter!",
+                    "Validasi Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        return true;
+    }
+
+    // Method CREATE
+    private void tambahKategori() {
+        if (!validateInput()) return;
+
+        // Cek duplikasi nama
+        if (controller.isKategoriExists(txtNamaKategori.getText().trim(), 0)) {
+            JOptionPane.showMessageDialog(this,
+                    "Nama kategori sudah ada!",
+                    "Duplikasi Data",
+                    JOptionPane.WARNING_MESSAGE);
             return;
         }
-        id.ac.unpas.restoranapp.model.Kategori k = new id.ac.unpas.restoranapp.model.Kategori();
-        k.setNamaKategori(txtNamaKategori.getText());
-        k.setDeskripsi(txtDeskripsi.getText());
-        
-        // Panggil insert (Controller lama return String)
-        String result = controller.insert(k); 
-        JOptionPane.showMessageDialog(this, result);
-        loadTableData();
-        bersihkanForm();
-    }
 
-    private void updateKategori() {
-        if (selectedId == -1) return;
-        id.ac.unpas.restoranapp.model.Kategori k = new id.ac.unpas.restoranapp.model.Kategori();
-        k.setId(selectedId);
-        k.setNamaKategori(txtNamaKategori.getText());
-        k.setDeskripsi(txtDeskripsi.getText());
-        
-        String result = controller.update(k);
-        JOptionPane.showMessageDialog(this, result);
-        loadTableData();
-        bersihkanForm();
-    }
+        Kategori kategori = new Kategori(
+                txtNamaKategori.getText().trim(),
+                txtDeskripsi.getText().trim()
+        );
 
-    private void hapusKategori() {
-        if (selectedId != -1 && JOptionPane.showConfirmDialog(this, "Hapus?", "Konfirmasi", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-            String result = controller.delete(selectedId);
-            JOptionPane.showMessageDialog(this, result);
+        if (controller.tambahKategori(kategori)) {
+            JOptionPane.showMessageDialog(this, "Kategori berhasil ditambahkan!");
             loadTableData();
             bersihkanForm();
+        } else {
+            JOptionPane.showMessageDialog(this, "Gagal menambahkan kategori!",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    // Method UPDATE
+    private void updateKategori() {
+        if (selectedId == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Pilih data yang akan diupdate!",
+                    "Info",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        if (!validateInput()) return;
+
+        // Cek duplikasi nama (exclude ID yang sedang diedit)
+        if (controller.isKategoriExists(txtNamaKategori.getText().trim(), selectedId)) {
+            JOptionPane.showMessageDialog(this,
+                    "Nama kategori sudah ada!",
+                    "Duplikasi Data",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Kategori kategori = new Kategori(
+                selectedId,
+                txtNamaKategori.getText().trim(),
+                txtDeskripsi.getText().trim()
+        );
+
+        if (controller.updateKategori(kategori)) {
+            JOptionPane.showMessageDialog(this, "Kategori berhasil diupdate!");
+            loadTableData();
+            bersihkanForm();
+        } else {
+            JOptionPane.showMessageDialog(this, "Gagal mengupdate kategori!",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Method DELETE
+    private void hapusKategori() {
+        if (selectedId == -1) {
+            JOptionPane.showMessageDialog(this,
+                    "Pilih data yang akan dihapus!",
+                    "Info",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Apakah Anda yakin ingin menghapus kategori ini?",
+                "Konfirmasi Hapus",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            if (controller.hapusKategori(selectedId)) {
+                JOptionPane.showMessageDialog(this, "Kategori berhasil dihapus!");
+                loadTableData();
+                bersihkanForm();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Gagal menghapus kategori! Mungkin masih ada menu yang menggunakan kategori ini.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    // Method untuk load data ke tabel
     private void loadTableData() {
-        // Ambil DefaultTableModel langsung dari controller lama
-        DefaultTableModel model = controller.getAllKategori();
-        tableKategori.setModel(model);
-    }
+        tableModel.setRowCount(0); // Clear tabel
+        List<Kategori> kategoriList = controller.getAllKategori();
 
-    private void selectTableRow() {
-        int row = tableKategori.getSelectedRow();
-        if (row != -1) {
-            // Kolom Controller Lama: 0=ID, 1=Nama, 2=Deskripsi
-            selectedId = Integer.parseInt(tableKategori.getValueAt(row, 0).toString());
-            txtNamaKategori.setText(tableKategori.getValueAt(row, 1).toString());
-            txtDeskripsi.setText(tableKategori.getValueAt(row, 2).toString());
+        for (Kategori k : kategoriList) {
+            Object[] row = {k.getId(), k.getNamaKategori(), k.getDeskripsi()};
+            tableModel.addRow(row);
         }
     }
 
+    // Method untuk select baris tabel dan isi form
+    private void selectTableRow() {
+        int selectedRow = tableKategori.getSelectedRow();
+        if (selectedRow != -1) {
+            selectedId = (int) tableModel.getValueAt(selectedRow, 0);
+            txtNamaKategori.setText((String) tableModel.getValueAt(selectedRow, 1));
+            txtDeskripsi.setText((String) tableModel.getValueAt(selectedRow, 2));
+        }
+    }
+
+    // Method untuk bersihkan form
     private void bersihkanForm() {
         selectedId = -1;
         txtNamaKategori.setText("");
