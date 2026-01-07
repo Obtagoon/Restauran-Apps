@@ -1,21 +1,40 @@
 package id.ac.unpas.restoranapp.view;
 
-import id.ac.unpas.restoranapp.controller.MenuController;
-import id.ac.unpas.restoranapp.controller.KategoriController;
-import id.ac.unpas.restoranapp.model.KategoriModel;
-import id.ac.unpas.restoranapp.model.MenuModel;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.util.List;
 
-public class Menu extends JPanel{
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+import id.ac.unpas.restoranapp.controller.KategoriController;
+import id.ac.unpas.restoranapp.controller.MenuController;
+import id.ac.unpas.restoranapp.model.KategoriModel;
+import id.ac.unpas.restoranapp.model.MenuModel;
+
+public class MenuView extends JPanel{
     private MenuController menuController;
     private KategoriController kategoriController;
 
     // Komponen form input
     private JTextField txtNamaMenu, txtHarga;
-    private JComboBox<KategoriModel> cmbKategori;
+    private JComboBox<KategoriModel> cmbKategori; // Use KategoriModel, NOT View
     private JTextArea txtDeskripsi;
     private JCheckBox chkTersedia;
     private JButton btnTambah, btnUpdate, btnHapus, btnBersihkan;
@@ -26,7 +45,7 @@ public class Menu extends JPanel{
 
     private int selectedId = -1;
 
-    public Menu() {
+    public MenuView() {
         menuController = new MenuController();
         kategoriController = new KategoriController();
         initComponents();
@@ -148,7 +167,7 @@ public class Menu extends JPanel{
     // Load data kategori ke ComboBox
     private void loadKategoriComboBox() {
         cmbKategori.removeAllItems();
-        List<KategoriModel> kategoriList = kategoriController.getAllKategoriList();
+        List<KategoriModel> kategoriList = kategoriController.getAllKategoriList(); // Use Safe List
         for (KategoriModel k : kategoriList) {
             cmbKategori.addItem(k);
         }

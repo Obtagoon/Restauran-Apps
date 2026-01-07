@@ -1,21 +1,40 @@
 package id.ac.unpas.restoranapp.view;
 
-import id.ac.unpas.restoranapp.controller.PesananController;
-import id.ac.unpas.restoranapp.controller.MenuController;
-import id.ac.unpas.restoranapp.model.MenuModel;
-import id.ac.unpas.restoranapp.model.PesananModel;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.util.List;
 
-public class Pesanan extends JPanel{
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+import id.ac.unpas.restoranapp.controller.MenuController;
+import id.ac.unpas.restoranapp.controller.PesananController;
+import id.ac.unpas.restoranapp.model.MenuModel;
+import id.ac.unpas.restoranapp.model.PesananModel;
+
+public class PesananView extends JPanel{
     private PesananController pesananController;
     private MenuController menuController;
 
     // Komponen form input
     private JTextField txtNomorMeja, txtJumlah;
-    private JComboBox<MenuModel> cmbMenu;
+    private JComboBox<MenuModel> cmbMenu; // Use MenuModel
     private JComboBox<String> cmbStatus;
     private JLabel lblHargaSatuan, lblTotalHarga;
     private JButton btnTambah, btnUpdate, btnHapus, btnBersihkan;
@@ -26,7 +45,7 @@ public class Pesanan extends JPanel{
 
     private int selectedId = -1;
 
-    public Pesanan() {
+    public PesananView() {
         pesananController = new PesananController();
         menuController = new MenuController();
         initComponents();
@@ -310,21 +329,9 @@ public class Pesanan extends JPanel{
         pesanan.setTotalHarga(totalHarga);
         pesanan.setStatus((String) cmbStatus.getSelectedItem());
 
-        // Note: Controller update method might be different (updateStatus only?)
-        // In previous controller (Step 80), there was updateStatus, not full update?
-        // Let's assume we maintain existing controller behavior.
-        // Wait, PesananController (Step 80) only has 'updateStatus'. 
-        // Modifying full order might not be supported by Controller yet.
-        // We will call updateStatus if that is what was there, OR we skip full update if unsupported.
-        // For now, let's try calling updateStatus if status changed, or add full update to Controller?
-        // Given user instructions "Strictly follow code", if original had btnUpdate -> updatePesanan, it might have failed?
-        // Or I missed where updatePesanan calls controller.
-        
-        // Checking Controller again (Step 80): public String updateStatus(int id, String status)
-        // No full update method.
-        // So we will just update Status here as a safe fallback or implement full update?
-        // I'll implement full update in Controller later if needed, but for now stick to updateStatus or warning.
-        
+        // Note: Controller update method might be different allow only Status update based on previous findings.
+        // We assume updateStatus is available or we implement handling similar to previous.
+        // If controller only has updateStatus, we check here.
         if (pesananController.updateStatus(selectedId, (String) cmbStatus.getSelectedItem()).contains("berhasil")) {
              JOptionPane.showMessageDialog(this, "Status Pesanan berhasil diupdate! (Hanya Status)");
              loadTableData();

@@ -8,9 +8,9 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import id.ac.unpas.restoranapp.view.Kategori;
-import id.ac.unpas.restoranapp.view.Menu;
-import id.ac.unpas.restoranapp.view.Pesanan;
+import id.ac.unpas.restoranapp.view.KategoriView;
+import id.ac.unpas.restoranapp.view.MenuView;
+import id.ac.unpas.restoranapp.view.PesananView;
 
 public class RestoranApp extends JFrame {
 
@@ -33,9 +33,9 @@ public class RestoranApp extends JFrame {
 
         // Tambahkan Tab View
         // Pastikan kelas Kategori, Menu, dan Pesanan adalah JPanel atau extends Component
-        tabbedPane.addTab("Manajemen Menu", new Menu());
-        tabbedPane.addTab("Manajemen Kategori", new Kategori());
-        tabbedPane.addTab("Pesanan", new Pesanan());
+        tabbedPane.addTab("Manajemen Menu", new MenuView());
+        tabbedPane.addTab("Manajemen Kategori", new KategoriView());
+        tabbedPane.addTab("Pesanan", new PesananView());
 
         // Tambahkan ke Frame
         add(tabbedPane, java.awt.BorderLayout.CENTER);
