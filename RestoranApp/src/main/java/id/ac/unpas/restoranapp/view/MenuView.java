@@ -1,32 +1,10 @@
 package id.ac.unpas.restoranapp.view;
-
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.util.List;
-
-import javax.swing.BorderFactory;
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.table.DefaultTableModel;
-
-import id.ac.unpas.restoranapp.controller.KategoriController;
 import id.ac.unpas.restoranapp.controller.MenuController;
-import id.ac.unpas.restoranapp.model.KategoriModel;
+import id.ac.unpas.restoranapp.controller.KategoriController;
 import id.ac.unpas.restoranapp.model.MenuModel;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
 
 public class MenuView extends JPanel{
     private MenuController menuController;
@@ -34,10 +12,10 @@ public class MenuView extends JPanel{
 
     // Komponen form input
     private JTextField txtNamaMenu, txtHarga;
-    private JComboBox<KategoriModel> cmbKategori; // Use KategoriModel, NOT View
+    private JComboBox<String> cmbKategori;
     private JTextArea txtDeskripsi;
     private JCheckBox chkTersedia;
-    private JButton btnTambah, btnUpdate, btnHapus, btnBersihkan;
+    private JButton btnInsert, btnUpdate, btnDelete, btnClear;
 
     // Komponen tabel
     private JTable tableMenu;
@@ -78,17 +56,6 @@ public class MenuView extends JPanel{
 
         gbc.gridx = 1; gbc.weightx = 1.0;
         cmbKategori = new JComboBox<>();
-        // Custom Renderer untuk menampilkan nama kategori di ComboBox
-        cmbKategori.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof KategoriModel) {
-                    setText(((KategoriModel) value).getNamaKategori());
-                }
-                return this;
-            }
-        });
         formPanel.add(cmbKategori, gbc);
 
         // Harga
@@ -120,15 +87,15 @@ public class MenuView extends JPanel{
 
         // Panel Button
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        btnTambah = new JButton("Tambah");
+        btnInsert = new JButton("Tambah");
         btnUpdate = new JButton("Update");
-        btnHapus = new JButton("Hapus");
-        btnBersihkan = new JButton("Bersihkan");
+        btnDelete = new JButton("Hapus");
+        btnClear = new JButton("Bersihkan");
 
-        buttonPanel.add(btnTambah);
+        buttonPanel.add(btnInsert);
         buttonPanel.add(btnUpdate);
-        buttonPanel.add(btnHapus);
-        buttonPanel.add(btnBersihkan);
+        buttonPanel.add(btnDelete);
+        buttonPanel.add(btnClear);
 
         gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2;
         formPanel.add(buttonPanel, gbc);
@@ -137,7 +104,7 @@ public class MenuView extends JPanel{
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setBorder(BorderFactory.createTitledBorder("Data Menu"));
 
-        String[] columnNames = {"ID", "Nama Menu", "Kategori ID", "Harga", "Deskripsi", "Tersedia"};
+        String[] columnNames = {"ID", "Kategori ID", "Nama Menu", "Harga", "Deskripsi", "Status"};
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -158,19 +125,31 @@ public class MenuView extends JPanel{
         add(tablePanel, BorderLayout.CENTER);
 
         // Event listener
-        btnTambah.addActionListener(e -> tambahMenu());
+        btnInsert.addActionListener(e -> tambahMenu());
         btnUpdate.addActionListener(e -> updateMenu());
-        btnHapus.addActionListener(e -> hapusMenu());
-        btnBersihkan.addActionListener(e -> bersihkanForm());
+        btnDelete.addActionListener(e -> hapusMenu());
+        btnClear.addActionListener(e -> bersihkanForm());
     }
 
     // Load data kategori ke ComboBox
     private void loadKategoriComboBox() {
         cmbKategori.removeAllItems();
-        List<KategoriModel> kategoriList = kategoriController.getAllKategoriList(); // Use Safe List
-        for (KategoriModel k : kategoriList) {
-            cmbKategori.addItem(k);
+        DefaultTableModel kategoriModel = kategoriController.getAllKategori();
+
+        for (int i = 0; i < kategoriModel.getRowCount(); i++) {
+            int id = (int) kategoriModel.getValueAt(i, 0);
+            String nama = (String) kategoriModel.getValueAt(i, 1);
+            cmbKategori.addItem(id + " - " + nama);
         }
+    }
+
+    // Ambil kategori ID dari ComboBox
+    private int getSelectedKategoriId() {
+        String selected = (String) cmbKategori.getSelectedItem();
+        if (selected != null) {
+            return Integer.parseInt(selected.split(" - ")[0]);
+        }
+        return -1;
     }
 
     // Validasi input
@@ -218,20 +197,21 @@ public class MenuView extends JPanel{
     private void tambahMenu() {
         if (!validateInput()) return;
 
-        KategoriModel selectedKategori = (KategoriModel) cmbKategori.getSelectedItem();
         MenuModel menu = new MenuModel();
+        menu.setKategoriId(getSelectedKategoriId());
         menu.setNamaMenu(txtNamaMenu.getText().trim());
-        menu.setKategoriId(selectedKategori.getId());
         menu.setHarga(Double.parseDouble(txtHarga.getText().trim()));
         menu.setDeskripsi(txtDeskripsi.getText().trim());
         menu.setTersedia(chkTersedia.isSelected());
 
-        if (menuController.insert(menu).contains("Berhasil")) {
-            JOptionPane.showMessageDialog(this, "Menu berhasil ditambahkan!");
+        String result = menuController.insert(menu);
+
+        if (result.contains("Berhasil")) {
+            JOptionPane.showMessageDialog(this, result);
             loadTableData();
             bersihkanForm();
         } else {
-            JOptionPane.showMessageDialog(this, "Gagal menambahkan menu!",
+            JOptionPane.showMessageDialog(this, result,
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -248,21 +228,22 @@ public class MenuView extends JPanel{
 
         if (!validateInput()) return;
 
-        KategoriModel selectedKategori = (KategoriModel) cmbKategori.getSelectedItem();
         MenuModel menu = new MenuModel();
         menu.setId(selectedId);
+        menu.setKategoriId(getSelectedKategoriId());
         menu.setNamaMenu(txtNamaMenu.getText().trim());
-        menu.setKategoriId(selectedKategori.getId());
         menu.setHarga(Double.parseDouble(txtHarga.getText().trim()));
         menu.setDeskripsi(txtDeskripsi.getText().trim());
         menu.setTersedia(chkTersedia.isSelected());
 
-        if (menuController.update(menu).contains("Berhasil")) {
-            JOptionPane.showMessageDialog(this, "Menu berhasil diupdate!");
+        String result = menuController.update(menu);
+
+        if (result.contains("Berhasil")) {
+            JOptionPane.showMessageDialog(this, result);
             loadTableData();
             bersihkanForm();
         } else {
-            JOptionPane.showMessageDialog(this, "Gagal mengupdate menu!",
+            JOptionPane.showMessageDialog(this, result,
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -283,12 +264,14 @@ public class MenuView extends JPanel{
                 JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            if (menuController.delete(selectedId).contains("Berhasil")) {
-                JOptionPane.showMessageDialog(this, "Menu berhasil dihapus!");
+            String result = menuController.delete(selectedId);
+
+            if (result.contains("Berhasil")) {
+                JOptionPane.showMessageDialog(this, result);
                 loadTableData();
                 bersihkanForm();
             } else {
-                JOptionPane.showMessageDialog(this, "Gagal menghapus menu!",
+                JOptionPane.showMessageDialog(this, result,
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -296,7 +279,7 @@ public class MenuView extends JPanel{
 
     // Load data ke tabel
     private void loadTableData() {
-        tableModel = (DefaultTableModel) menuController.getAllMenu();
+        tableModel = menuController.getAllMenu();
         tableMenu.setModel(tableModel);
     }
 
@@ -304,27 +287,27 @@ public class MenuView extends JPanel{
     private void selectTableRow() {
         int selectedRow = tableMenu.getSelectedRow();
         if (selectedRow != -1) {
-            selectedId = (int) tableMenu.getModel().getValueAt(selectedRow, 0);
-            
-            // Note: Data di tabel mungkin tidak lengkap, idealnya getById dari controller
-            // Tapi untuk simplifikasi kita ambil dari tabel atau field yang ada
-             txtNamaMenu.setText((String) tableMenu.getModel().getValueAt(selectedRow, 2));
-             txtHarga.setText(String.valueOf(tableMenu.getModel().getValueAt(selectedRow, 3)));
-             txtDeskripsi.setText((String) tableMenu.getModel().getValueAt(selectedRow, 4));
-             // Tersedia (String) -> Boolean
-             String status = (String) tableMenu.getModel().getValueAt(selectedRow, 5);
-             chkTersedia.setSelected(status.equalsIgnoreCase("Tersedia"));
-             
-             // Set Kategori ComboBox
-             // Di tabel ada kategori_id (index 1)
-             int katId = (int) tableMenu.getModel().getValueAt(selectedRow, 1);
-             for (int i = 0; i < cmbKategori.getItemCount(); i++) {
-                 KategoriModel k = cmbKategori.getItemAt(i);
-                 if (k.getId() == katId) {
-                     cmbKategori.setSelectedIndex(i);
-                     break;
-                 }
-             }
+            selectedId = (int) tableModel.getValueAt(selectedRow, 0);
+            int kategoriId = (int) tableModel.getValueAt(selectedRow, 1);
+            String namaMenu = (String) tableModel.getValueAt(selectedRow, 2);
+            double harga = (double) tableModel.getValueAt(selectedRow, 3);
+            String deskripsi = (String) tableModel.getValueAt(selectedRow, 4);
+            String status = (String) tableModel.getValueAt(selectedRow, 5);
+
+            txtNamaMenu.setText(namaMenu);
+            txtHarga.setText(String.valueOf(harga));
+            txtDeskripsi.setText(deskripsi);
+            chkTersedia.setSelected(status.equals("Tersedia"));
+
+            // Set selected kategori di combobox
+            for (int i = 0; i < cmbKategori.getItemCount(); i++) {
+                String item = cmbKategori.getItemAt(i);
+                int id = Integer.parseInt(item.split(" - ")[0]);
+                if (id == kategoriId) {
+                    cmbKategori.setSelectedIndex(i);
+                    break;
+                }
+            }
         }
     }
 
