@@ -7,13 +7,13 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-public class Pesanan extends JPanel{
+public class PesananView extends JPanel{
     private PesananController pesananController;
     private MenuController menuController;
 
     // Komponen form input
     private JTextField txtNomorMeja, txtJumlah;
-    private JComboBox<Menu> cmbMenu;
+    private JComboBox<MenuView> cmbMenu;
     private JComboBox<String> cmbStatus;
     private JLabel lblHargaSatuan, lblTotalHarga;
     private JButton btnTambah, btnUpdate, btnHapus, btnBersihkan;
@@ -24,7 +24,7 @@ public class Pesanan extends JPanel{
 
     private int selectedId = -1;
 
-    public Pesanan() {
+    public PesananView() {
         pesananController = new PesananController();
         menuController = new MenuController();
         initComponents();
@@ -174,8 +174,8 @@ public class Pesanan extends JPanel{
     // Load data menu ke ComboBox (hanya menu yang tersedia)
     private void loadMenuComboBox() {
         cmbMenu.removeAllItems();
-        List<Menu> menuList = menuController.getAllMenu();
-        for (Menu m : menuList) {
+        List<MenuView> menuList = menuController.getAllMenu();
+        for (MenuView m : menuList) {
             if (m.isTersedia()) { // Hanya menu yang tersedia
                 cmbMenu.addItem(m);
             }
@@ -184,7 +184,7 @@ public class Pesanan extends JPanel{
 
     // Update info harga saat menu dipilih
     private void updateHargaInfo() {
-        Menu selectedMenu = (Menu) cmbMenu.getSelectedItem();
+        MenuView selectedMenu = (MenuView) cmbMenu.getSelectedItem();
         if (selectedMenu != null) {
             lblHargaSatuan.setText(String.format("Rp %.2f", selectedMenu.getHarga()));
             hitungTotalHarga();
@@ -194,7 +194,7 @@ public class Pesanan extends JPanel{
     // Hitung total harga otomatis
     private void hitungTotalHarga() {
         try {
-            Menu selectedMenu = (Menu) cmbMenu.getSelectedItem();
+            MenuView selectedMenu = (MenuView) cmbMenu.getSelectedItem();
             if (selectedMenu != null && !txtJumlah.getText().trim().isEmpty()) {
                 int jumlah = Integer.parseInt(txtJumlah.getText().trim());
                 double total = selectedMenu.getHarga() * jumlah;
@@ -252,11 +252,11 @@ public class Pesanan extends JPanel{
     private void tambahPesanan() {
         if (!validateInput()) return;
 
-        Menu selectedMenu = (Menu) cmbMenu.getSelectedItem();
+        MenuView selectedMenu = (MenuView) cmbMenu.getSelectedItem();
         int jumlah = Integer.parseInt(txtJumlah.getText().trim());
         double totalHarga = selectedMenu.getHarga() * jumlah;
 
-        Pesanan pesanan = new Pesanan(
+        PesananView pesanan = new PesananView(
                 txtNomorMeja.getText().trim(),
                 selectedMenu.getId(),
                 jumlah,
@@ -286,11 +286,11 @@ public class Pesanan extends JPanel{
 
         if (!validateInput()) return;
 
-        Menu selectedMenu = (Menu) cmbMenu.getSelectedItem();
+        MenuView selectedMenu = (MenuView) cmbMenu.getSelectedItem();
         int jumlah = Integer.parseInt(txtJumlah.getText().trim());
         double totalHarga = selectedMenu.getHarga() * jumlah;
 
-        Pesanan pesanan = new Pesanan();
+        PesananView pesanan = new PesananView();
         pesanan.setId(selectedId);
         pesanan.setNomorMeja(txtNomorMeja.getText().trim());
         pesanan.setMenuId(selectedMenu.getId());
@@ -338,9 +338,9 @@ public class Pesanan extends JPanel{
     // Load data ke tabel
     private void loadTableData() {
         tableModel.setRowCount(0);
-        List<Pesanan> pesananList = pesananController.getAllPesanan();
+        List<PesananView> pesananList = pesananController.getAllPesanan();
 
-        for (Pesanan p : pesananList) {
+        for (PesananView p : pesananList) {
             Object[] row = {
                     p.getId(),
                     p.getNomorMeja(),
@@ -363,7 +363,7 @@ public class Pesanan extends JPanel{
 
             String namaMenu = (String) tableModel.getValueAt(selectedRow, 2);
             for (int i = 0; i < cmbMenu.getItemCount(); i++) {
-                Menu m = cmbMenu.getItemAt(i);
+                MenuView m = cmbMenu.getItemAt(i);
                 if (m.getNamaMenu().equals(namaMenu)) {
                     cmbMenu.setSelectedIndex(i);
                     break;

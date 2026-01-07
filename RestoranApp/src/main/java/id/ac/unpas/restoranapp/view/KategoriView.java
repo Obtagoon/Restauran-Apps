@@ -1,19 +1,18 @@
 package id.ac.unpas.restoranapp.view;
 
-import controller.KategoriController;
-import model.Kategori;
+import id.ac.unpas.restoranapp.model.KategoriModel;
+import id.ac.unpas.restoranapp.controller.KategoriController;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.util.List;
 
-public class Kategori extends JPanel {
+public class KategoriView extends JPanel {
     private KategoriController controller;
 
     // Komponen form input
     private JTextField txtNamaKategori;
     private JTextArea txtDeskripsi;
-    private JButton btnTambah, btnUpdate, btnHapus, btnBersihkan;
+    private JButton btnInsert, btnUpdate, btnDelete, btnClear;
 
     // Komponen tabel
     private JTable tableKategori;
@@ -22,11 +21,12 @@ public class Kategori extends JPanel {
     // Variable untuk menyimpan ID saat update
     private int selectedId = -1;
 
-    public Kategori() {
+    public KategoriView() {
         controller = new KategoriController();
         initComponents();
         loadTableData();
     }
+
     private void initComponents() {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -58,15 +58,15 @@ public class Kategori extends JPanel {
 
         // Panel Button
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        btnTambah = new JButton("Tambah");
+        btnInsert = new JButton("Tambah");
         btnUpdate = new JButton("Update");
-        btnHapus = new JButton("Hapus");
-        btnBersihkan = new JButton("Bersihkan");
+        btnDelete = new JButton("Hapus");
+        btnClear = new JButton("Bersihkan");
 
-        buttonPanel.add(btnTambah);
+        buttonPanel.add(btnInsert);
         buttonPanel.add(btnUpdate);
-        buttonPanel.add(btnHapus);
-        buttonPanel.add(btnBersihkan);
+        buttonPanel.add(btnDelete);
+        buttonPanel.add(btnClear);
 
         gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 2;
         formPanel.add(buttonPanel, gbc);
@@ -98,10 +98,10 @@ public class Kategori extends JPanel {
         add(tablePanel, BorderLayout.CENTER);
 
         // Event listener untuk button
-        btnTambah.addActionListener(e -> tambahKategori());
+        btnInsert.addActionListener(e -> insertKategori());
         btnUpdate.addActionListener(e -> updateKategori());
-        btnHapus.addActionListener(e -> hapusKategori());
-        btnBersihkan.addActionListener(e -> bersihkanForm());
+        btnDelete.addActionListener(e -> deleteKategori());
+        btnClear.addActionListener(e -> clearForm());
     }
 
     // Method untuk validasi input
@@ -126,29 +126,21 @@ public class Kategori extends JPanel {
     }
 
     // Method CREATE
-    private void tambahKategori() {
+    private void insertKategori() {
         if (!validateInput()) return;
 
-        // Cek duplikasi nama
-        if (controller.isKategoriExists(txtNamaKategori.getText().trim(), 0)) {
-            JOptionPane.showMessageDialog(this,
-                    "Nama kategori sudah ada!",
-                    "Duplikasi Data",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        KategoriModel kategori = new KategoriModel();
+        kategori.setNamaKategori(txtNamaKategori.getText().trim());
+        kategori.setDeskripsi(txtDeskripsi.getText().trim());
 
-        Kategori kategori = new Kategori(
-                txtNamaKategori.getText().trim(),
-                txtDeskripsi.getText().trim()
-        );
+        String result = controller.insert(kategori);
 
-        if (controller.tambahKategori(kategori)) {
-            JOptionPane.showMessageDialog(this, "Kategori berhasil ditambahkan!");
+        if (result.contains("Berhasil")) {
+            JOptionPane.showMessageDialog(this, result);
             loadTableData();
-            bersihkanForm();
+            clearForm();
         } else {
-            JOptionPane.showMessageDialog(this, "Gagal menambahkan kategori!",
+            JOptionPane.showMessageDialog(this, result,
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -165,33 +157,25 @@ public class Kategori extends JPanel {
 
         if (!validateInput()) return;
 
-        // Cek duplikasi nama (exclude ID yang sedang diedit)
-        if (controller.isKategoriExists(txtNamaKategori.getText().trim(), selectedId)) {
-            JOptionPane.showMessageDialog(this,
-                    "Nama kategori sudah ada!",
-                    "Duplikasi Data",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        KategoriModel kategori = new KategoriModel();
+        kategori.setId(selectedId);
+        kategori.setNamaKategori(txtNamaKategori.getText().trim());
+        kategori.setDeskripsi(txtDeskripsi.getText().trim());
 
-        Kategori kategori = new Kategori(
-                selectedId,
-                txtNamaKategori.getText().trim(),
-                txtDeskripsi.getText().trim()
-        );
+        String result = controller.update(kategori);
 
-        if (controller.updateKategori(kategori)) {
-            JOptionPane.showMessageDialog(this, "Kategori berhasil diupdate!");
+        if (result.contains("Berhasil")) {
+            JOptionPane.showMessageDialog(this, result);
             loadTableData();
-            bersihkanForm();
+            clearForm();
         } else {
-            JOptionPane.showMessageDialog(this, "Gagal mengupdate kategori!",
+            JOptionPane.showMessageDialog(this, result,
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     // Method DELETE
-    private void hapusKategori() {
+    private void deleteKategori() {
         if (selectedId == -1) {
             JOptionPane.showMessageDialog(this,
                     "Pilih data yang akan dihapus!",
@@ -206,28 +190,23 @@ public class Kategori extends JPanel {
                 JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            if (controller.hapusKategori(selectedId)) {
-                JOptionPane.showMessageDialog(this, "Kategori berhasil dihapus!");
+            String result = controller.delete(selectedId);
+
+            if (result.contains("Berhasil")) {
+                JOptionPane.showMessageDialog(this, result);
                 loadTableData();
-                bersihkanForm();
+                clearForm();
             } else {
-                JOptionPane.showMessageDialog(this,
-                        "Gagal menghapus kategori! Mungkin masih ada menu yang menggunakan kategori ini.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, result,
+                        "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
     // Method untuk load data ke tabel
     private void loadTableData() {
-        tableModel.setRowCount(0); // Clear tabel
-        List<Kategori> kategoriList = controller.getAllKategori();
-
-        for (Kategori k : kategoriList) {
-            Object[] row = {k.getId(), k.getNamaKategori(), k.getDeskripsi()};
-            tableModel.addRow(row);
-        }
+        tableModel = controller.getAllKategori();
+        tableKategori.setModel(tableModel);
     }
 
     // Method untuk select baris tabel dan isi form
@@ -240,8 +219,9 @@ public class Kategori extends JPanel {
         }
     }
 
+
     // Method untuk bersihkan form
-    private void bersihkanForm() {
+    private void clearForm() {
         selectedId = -1;
         txtNamaKategori.setText("");
         txtDeskripsi.setText("");

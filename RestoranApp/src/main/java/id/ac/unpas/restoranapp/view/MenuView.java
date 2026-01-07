@@ -7,13 +7,13 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
-public class Menu extends JPanel{
+public class MenuView extends JPanel{
     private MenuController menuController;
     private KategoriController kategoriController;
 
     // Komponen form input
     private JTextField txtNamaMenu, txtHarga;
-    private JComboBox<Kategori> cmbKategori;
+    private JComboBox<KategoriView> cmbKategori;
     private JTextArea txtDeskripsi;
     private JCheckBox chkTersedia;
     private JButton btnTambah, btnUpdate, btnHapus, btnBersihkan;
@@ -24,7 +24,7 @@ public class Menu extends JPanel{
 
     private int selectedId = -1;
 
-    public Menu() {
+    public MenuView() {
         menuController = new MenuController();
         kategoriController = new KategoriController();
         initComponents();
@@ -135,8 +135,8 @@ public class Menu extends JPanel{
     // Load data kategori ke ComboBox
     private void loadKategoriComboBox() {
         cmbKategori.removeAllItems();
-        List<Kategori> kategoriList = kategoriController.getAllKategori();
-        for (Kategori k : kategoriList) {
+        List<KategoriView> kategoriList = kategoriController.getAllKategori();
+        for (KategoriView k : kategoriList) {
             cmbKategori.addItem(k);
         }
     }
@@ -186,8 +186,8 @@ public class Menu extends JPanel{
     private void tambahMenu() {
         if (!validateInput()) return;
 
-        Kategori selectedKategori = (Kategori) cmbKategori.getSelectedItem();
-        Menu menu = new Menu(
+        KategoriView selectedKategori = (KategoriView) cmbKategori.getSelectedItem();
+        MenuView menu = new MenuView(
                 txtNamaMenu.getText().trim(),
                 selectedKategori.getId(),
                 Double.parseDouble(txtHarga.getText().trim()),
@@ -217,8 +217,8 @@ public class Menu extends JPanel{
 
         if (!validateInput()) return;
 
-        Kategori selectedKategori = (Kategori) cmbKategori.getSelectedItem();
-        Menu menu = new Menu(
+        KategoriView selectedKategori = (KategoriView) cmbKategori.getSelectedItem();
+        MenuView menu = new MenuView(
                 selectedId,
                 txtNamaMenu.getText().trim(),
                 selectedKategori.getId(),
@@ -268,9 +268,9 @@ public class Menu extends JPanel{
     // Load data ke tabel
     private void loadTableData() {
         tableModel.setRowCount(0);
-        List<Menu> menuList = menuController.getAllMenu();
+        List<MenuView> menuList = menuController.getAllMenu();
 
-        for (Menu m : menuList) {
+        for (MenuView m : menuList) {
             Object[] row = {
                     m.getId(),
                     m.getNamaMenu(),
@@ -290,13 +290,13 @@ public class Menu extends JPanel{
             selectedId = (int) tableModel.getValueAt(selectedRow, 0);
 
             // Ambil data lengkap dari database
-            Menu menu = menuController.getMenuById(selectedId);
+            MenuView menu = menuController.getMenuById(selectedId);
             if (menu != null) {
                 txtNamaMenu.setText(menu.getNamaMenu());
 
                 // Set selected kategori di combobox
                 for (int i = 0; i < cmbKategori.getItemCount(); i++) {
-                    Kategori k = cmbKategori.getItemAt(i);
+                    KategoriView k = cmbKategori.getItemAt(i);
                     if (k.getId() == menu.getKategoriId()) {
                         cmbKategori.setSelectedIndex(i);
                         break;
