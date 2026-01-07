@@ -1,15 +1,21 @@
 package id.ac.unpas.restoranapp.controller;
 
-import id.ac.unpas.restoranapp.database.KoneksiDB;
-import id.ac.unpas.restoranapp.model.PesananModel;
-import java.sql.*;
+import java.io.FileOutputStream;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import javax.swing.table.DefaultTableModel;
-// Import Library iText PDF
+
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Paragraph;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-import java.io.FileOutputStream;
+
+import id.ac.unpas.restoranapp.database.KoneksiDB;
+import id.ac.unpas.restoranapp.model.PesananModel;
 
 public class PesananController {
 
@@ -44,6 +50,33 @@ public class PesananController {
             e.printStackTrace();
         }
         return model;
+    }
+
+    // Ambil data untuk ListObject (jika diperlukan untuk manipulasi manual di View)
+    public java.util.List<PesananModel> getAllPesananList() {
+        java.util.List<PesananModel> list = new java.util.ArrayList<>();
+        try {
+            String sql = "SELECT p.*, m.nama_menu FROM pesanan p JOIN menu m ON p.menu_id = m.id ORDER BY p.id DESC";
+            Connection conn = KoneksiDB.configDB();
+            Statement stm = conn.createStatement();
+            ResultSet res = stm.executeQuery(sql);
+
+            while (res.next()) {
+                PesananModel p = new PesananModel();
+                p.setId(res.getInt("id"));
+                p.setMenuId(res.getInt("menu_id"));
+                p.setNomorMeja(res.getString("nomor_meja"));
+                p.setJumlah(res.getInt("jumlah"));
+                p.setTotalHarga(res.getDouble("total_harga"));
+                p.setStatus(res.getString("status"));
+                p.setTanggalPesan(res.getTimestamp("tanggal_pesan"));
+                p.setNamaMenu(res.getString("nama_menu"));
+                list.add(p);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     // Insert Pesanan (Hitung Total Otomatis)
@@ -102,6 +135,23 @@ public class PesananController {
         } catch (SQLException e) {
             return "Gagal hapus: " + e.getMessage();
         }
+    }
+
+    // Hitung Total Pendapatan (Status Selesai)
+    public double getTotalPendapatan() {
+        double total = 0;
+        try {
+            String sql = "SELECT SUM(total_harga) AS total FROM pesanan WHERE status = 'Selesai'";
+            Connection conn = KoneksiDB.configDB();
+            Statement stm = conn.createStatement();
+            ResultSet res = stm.executeQuery(sql);
+            if (res.next()) {
+                total = res.getDouble("total");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return total;
     }
 
     // Fitur Export PDF

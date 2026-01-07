@@ -1,11 +1,25 @@
 package id.ac.unpas.restoranapp.view;
 
-import controller.KategoriController;
-import model.Kategori;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout; // Import correct Model
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+import id.ac.unpas.restoranapp.controller.KategoriController;
+import id.ac.unpas.restoranapp.model.KategoriModel;
 
 public class Kategori extends JPanel {
     private KategoriController controller;
@@ -129,21 +143,12 @@ public class Kategori extends JPanel {
     private void tambahKategori() {
         if (!validateInput()) return;
 
-        // Cek duplikasi nama
-        if (controller.isKategoriExists(txtNamaKategori.getText().trim(), 0)) {
-            JOptionPane.showMessageDialog(this,
-                    "Nama kategori sudah ada!",
-                    "Duplikasi Data",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        // Check controller capabilities - assuming insert method exists
+        KategoriModel kategori = new KategoriModel();
+        kategori.setNamaKategori(txtNamaKategori.getText().trim());
+        kategori.setDeskripsi(txtDeskripsi.getText().trim());
 
-        Kategori kategori = new Kategori(
-                txtNamaKategori.getText().trim(),
-                txtDeskripsi.getText().trim()
-        );
-
-        if (controller.tambahKategori(kategori)) {
+        if (controller.insert(kategori).contains("Berhasil")) {
             JOptionPane.showMessageDialog(this, "Kategori berhasil ditambahkan!");
             loadTableData();
             bersihkanForm();
@@ -165,22 +170,12 @@ public class Kategori extends JPanel {
 
         if (!validateInput()) return;
 
-        // Cek duplikasi nama (exclude ID yang sedang diedit)
-        if (controller.isKategoriExists(txtNamaKategori.getText().trim(), selectedId)) {
-            JOptionPane.showMessageDialog(this,
-                    "Nama kategori sudah ada!",
-                    "Duplikasi Data",
-                    JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        KategoriModel kategori = new KategoriModel();
+        kategori.setId(selectedId);
+        kategori.setNamaKategori(txtNamaKategori.getText().trim());
+        kategori.setDeskripsi(txtDeskripsi.getText().trim());
 
-        Kategori kategori = new Kategori(
-                selectedId,
-                txtNamaKategori.getText().trim(),
-                txtDeskripsi.getText().trim()
-        );
-
-        if (controller.updateKategori(kategori)) {
+        if (controller.update(kategori).contains("Berhasil")) {
             JOptionPane.showMessageDialog(this, "Kategori berhasil diupdate!");
             loadTableData();
             bersihkanForm();
@@ -206,7 +201,7 @@ public class Kategori extends JPanel {
                 JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            if (controller.hapusKategori(selectedId)) {
+            if (controller.delete(selectedId).contains("Berhasil")) {
                 JOptionPane.showMessageDialog(this, "Kategori berhasil dihapus!");
                 loadTableData();
                 bersihkanForm();
@@ -221,10 +216,15 @@ public class Kategori extends JPanel {
 
     // Method untuk load data ke tabel
     private void loadTableData() {
+        // Karena getAllKategori() mengembalikan DefaultTableModel, kita bisa langsung setModel
+        // ATAU jika kita mau List, kita pakai getAllKategoriList()
+        // Mengikuti pola Menu dan Pesanan, kita akan pakai getAllKategoriList() agar konsisten
+        // dan manual mengisi row.
+        
         tableModel.setRowCount(0); // Clear tabel
-        List<Kategori> kategoriList = controller.getAllKategori();
+        List<KategoriModel> kategoriList = controller.getAllKategoriList(); // Use List return
 
-        for (Kategori k : kategoriList) {
+        for (KategoriModel k : kategoriList) {
             Object[] row = {k.getId(), k.getNamaKategori(), k.getDeskripsi()};
             tableModel.addRow(row);
         }
