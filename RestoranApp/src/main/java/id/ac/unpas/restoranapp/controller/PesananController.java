@@ -1,7 +1,7 @@
 package id.ac.unpas.restoranapp.controller;
 
 import id.ac.unpas.restoranapp.database.KoneksiDB;
-import id.ac.unpas.restoranapp.model.Pesanan;
+import id.ac.unpas.restoranapp.model.PesananModel;
 import java.sql.*;
 import javax.swing.table.DefaultTableModel;
 // Import Library iText PDF
@@ -47,7 +47,7 @@ public class PesananController {
     }
 
     // Insert Pesanan (Hitung Total Otomatis)
-    public String insert(Pesanan pesanan) {
+    public String insert(PesananModel pesanan) {
         try {
             double hargaSatuan = getHargaMenu(pesanan.getMenuId());
             double total = hargaSatuan * pesanan.getJumlah();

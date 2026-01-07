@@ -1,7 +1,7 @@
 package id.ac.unpas.restoranapp.controller;
 
 import id.ac.unpas.restoranapp.database.KoneksiDB;
-import id.ac.unpas.restoranapp.model.Menu;
+import id.ac.unpas.restoranapp.model.MenuModel;
 import java.sql.*;
 import javax.swing.table.DefaultTableModel;
 
@@ -39,7 +39,7 @@ public class MenuController {
         return model;
     }
 
-    public String insert(Menu menu) {
+    public String insert(MenuModel menu) {
         try {
             String sql = "INSERT INTO menu (kategori_id, nama_menu, harga, deskripsi, tersedia) VALUES (?, ?, ?, ?, ?)";
             Connection conn = KoneksiDB.configDB();
@@ -56,7 +56,7 @@ public class MenuController {
         }
     }
 
-    public String update(Menu menu) {
+    public String update(MenuModel menu) {
         try {
             String sql = "UPDATE menu SET kategori_id=?, nama_menu=?, harga=?, deskripsi=?, tersedia=? WHERE id=?";
             Connection conn = KoneksiDB.configDB();

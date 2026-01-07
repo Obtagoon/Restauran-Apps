@@ -2,7 +2,7 @@ package id.ac.unpas.restoranapp.controller;
 
 import java.sql.Statement;
 import id.ac.unpas.restoranapp.database.KoneksiDB;
-import id.ac.unpas.restoranapp.model.Kategori;
+import id.ac.unpas.restoranapp.model.KategoriModel;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -42,7 +42,7 @@ public class KategoriController {
     }
 
     //Tambah data baru
-    public String insert(Kategori kategori) {
+    public String insert(KategoriModel kategori) {
         if (kategori.getNamaKategori().trim().isEmpty()) {
             return "Nama Kategori tidak boleh kosong!";
         }
@@ -60,7 +60,7 @@ public class KategoriController {
     }
 
     //Ubah data
-    public String update(Kategori kategori) {
+    public String update(KategoriModel kategori) {
         try {
             String sql = "UPDATE kategori SET nama_kategori=?, deskripsi=? WHERE id=?";
             Connection conn = KoneksiDB.configDB();
