@@ -1,10 +1,25 @@
 package id.ac.unpas.restoranapp.view;
 
-import id.ac.unpas.restoranapp.model.KategoriModel;
-import id.ac.unpas.restoranapp.controller.KategoriController;
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+
+import id.ac.unpas.restoranapp.controller.KategoriController;
+import id.ac.unpas.restoranapp.model.KategoriModel;
 
 public class KategoriView extends JPanel {
     private KategoriController controller;
@@ -56,7 +71,8 @@ public class KategoriView extends JPanel {
         JScrollPane scrollDesc = new JScrollPane(txtDeskripsi);
         formPanel.add(scrollDesc, gbc);
 
-        // Panel Button
+        // Panel Button (Menggunakan nama variabel Remote: btnInsert, btnUpdate, btnDelete, btnClear)
+        // Tapi label tetap sesuai selera/remote
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         btnInsert = new JButton("Tambah");
         btnUpdate = new JButton("Update");
@@ -133,14 +149,13 @@ public class KategoriView extends JPanel {
         kategori.setNamaKategori(txtNamaKategori.getText().trim());
         kategori.setDeskripsi(txtDeskripsi.getText().trim());
 
-        String result = controller.insert(kategori);
-
-        if (result.contains("Berhasil")) {
-            JOptionPane.showMessageDialog(this, result);
+        // Menggunakan logika HEAD (controller.insert mengembalikan String)
+        if (controller.insert(kategori).contains("Berhasil")) {
+            JOptionPane.showMessageDialog(this, "Kategori berhasil ditambahkan!");
             loadTableData();
             clearForm();
         } else {
-            JOptionPane.showMessageDialog(this, result,
+            JOptionPane.showMessageDialog(this, "Gagal menambahkan kategori!",
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -162,14 +177,12 @@ public class KategoriView extends JPanel {
         kategori.setNamaKategori(txtNamaKategori.getText().trim());
         kategori.setDeskripsi(txtDeskripsi.getText().trim());
 
-        String result = controller.update(kategori);
-
-        if (result.contains("Berhasil")) {
-            JOptionPane.showMessageDialog(this, result);
+        if (controller.update(kategori).contains("Berhasil")) {
+            JOptionPane.showMessageDialog(this, "Kategori berhasil diupdate!");
             loadTableData();
             clearForm();
         } else {
-            JOptionPane.showMessageDialog(this, result,
+            JOptionPane.showMessageDialog(this, "Gagal mengupdate kategori!",
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -190,14 +203,12 @@ public class KategoriView extends JPanel {
                 JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            String result = controller.delete(selectedId);
-
-            if (result.contains("Berhasil")) {
-                JOptionPane.showMessageDialog(this, result);
+            if (controller.delete(selectedId).contains("Berhasil")) {
+                JOptionPane.showMessageDialog(this, "Kategori berhasil dihapus!");
                 loadTableData();
                 clearForm();
             } else {
-                JOptionPane.showMessageDialog(this, result,
+                JOptionPane.showMessageDialog(this, "Gagal menghapus kategori!",
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -205,8 +216,14 @@ public class KategoriView extends JPanel {
 
     // Method untuk load data ke tabel
     private void loadTableData() {
-        tableModel = controller.getAllKategori();
-        tableKategori.setModel(tableModel);
+        // Logika HEAD: Menggunakan getAllKategoriList() untuk List<KategoriModel>
+        tableModel.setRowCount(0); // Clear tabel
+        List<KategoriModel> kategoriList = controller.getAllKategoriList(); 
+
+        for (KategoriModel k : kategoriList) {
+            Object[] row = {k.getId(), k.getNamaKategori(), k.getDeskripsi()};
+            tableModel.addRow(row);
+        }
     }
 
     // Method untuk select baris tabel dan isi form
@@ -218,7 +235,6 @@ public class KategoriView extends JPanel {
             txtDeskripsi.setText((String) tableModel.getValueAt(selectedRow, 2));
         }
     }
-
 
     // Method untuk bersihkan form
     private void clearForm() {

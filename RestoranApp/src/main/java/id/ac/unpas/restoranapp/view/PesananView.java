@@ -1,11 +1,32 @@
 package id.ac.unpas.restoranapp.view;
 
-import id.ac.unpas.restoranapp.controller.PesananController;
-import id.ac.unpas.restoranapp.controller.MenuController;
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
+
+import id.ac.unpas.restoranapp.controller.MenuController;
+import id.ac.unpas.restoranapp.controller.PesananController;
+import id.ac.unpas.restoranapp.model.MenuModel;
+import id.ac.unpas.restoranapp.model.PesananModel;
 
 public class PesananView extends JPanel{
     private PesananController pesananController;
@@ -13,7 +34,7 @@ public class PesananView extends JPanel{
 
     // Komponen form input
     private JTextField txtNomorMeja, txtJumlah;
-    private JComboBox<MenuView> cmbMenu;
+    private JComboBox<MenuModel> cmbMenu; // Use MenuModel
     private JComboBox<String> cmbStatus;
     private JLabel lblHargaSatuan, lblTotalHarga;
     private JButton btnTambah, btnUpdate, btnHapus, btnBersihkan;
@@ -57,6 +78,17 @@ public class PesananView extends JPanel{
 
         gbc.gridx = 1; gbc.weightx = 1.0;
         cmbMenu = new JComboBox<>();
+        // Custom Renderer
+        cmbMenu.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof MenuModel) {
+                    setText(((MenuModel) value).getNamaMenu());
+                }
+                return this;
+            }
+        });
         // Event listener untuk update harga saat menu dipilih
         cmbMenu.addActionListener(e -> updateHargaInfo());
         formPanel.add(cmbMenu, gbc);
@@ -174,8 +206,8 @@ public class PesananView extends JPanel{
     // Load data menu ke ComboBox (hanya menu yang tersedia)
     private void loadMenuComboBox() {
         cmbMenu.removeAllItems();
-        List<MenuView> menuList = menuController.getAllMenu();
-        for (MenuView m : menuList) {
+        List<MenuModel> menuList = menuController.getAllMenuList();
+        for (MenuModel m : menuList) {
             if (m.isTersedia()) { // Hanya menu yang tersedia
                 cmbMenu.addItem(m);
             }
@@ -184,7 +216,7 @@ public class PesananView extends JPanel{
 
     // Update info harga saat menu dipilih
     private void updateHargaInfo() {
-        MenuView selectedMenu = (MenuView) cmbMenu.getSelectedItem();
+        MenuModel selectedMenu = (MenuModel) cmbMenu.getSelectedItem();
         if (selectedMenu != null) {
             lblHargaSatuan.setText(String.format("Rp %.2f", selectedMenu.getHarga()));
             hitungTotalHarga();
@@ -194,7 +226,7 @@ public class PesananView extends JPanel{
     // Hitung total harga otomatis
     private void hitungTotalHarga() {
         try {
-            MenuView selectedMenu = (MenuView) cmbMenu.getSelectedItem();
+            MenuModel selectedMenu = (MenuModel) cmbMenu.getSelectedItem();
             if (selectedMenu != null && !txtJumlah.getText().trim().isEmpty()) {
                 int jumlah = Integer.parseInt(txtJumlah.getText().trim());
                 double total = selectedMenu.getHarga() * jumlah;
@@ -252,19 +284,18 @@ public class PesananView extends JPanel{
     private void tambahPesanan() {
         if (!validateInput()) return;
 
-        MenuView selectedMenu = (MenuView) cmbMenu.getSelectedItem();
+        MenuModel selectedMenu = (MenuModel) cmbMenu.getSelectedItem();
         int jumlah = Integer.parseInt(txtJumlah.getText().trim());
         double totalHarga = selectedMenu.getHarga() * jumlah;
 
-        PesananView pesanan = new PesananView(
-                txtNomorMeja.getText().trim(),
-                selectedMenu.getId(),
-                jumlah,
-                totalHarga,
-                (String) cmbStatus.getSelectedItem()
-        );
+        PesananModel pesanan = new PesananModel();
+        pesanan.setNomorMeja(txtNomorMeja.getText().trim());
+        pesanan.setMenuId(selectedMenu.getId());
+        pesanan.setJumlah(jumlah);
+        pesanan.setTotalHarga(totalHarga);
+        pesanan.setStatus((String) cmbStatus.getSelectedItem());
 
-        if (pesananController.tambahPesanan(pesanan)) {
+        if (pesananController.insert(pesanan).contains("Pesanan dibuat")) {
             JOptionPane.showMessageDialog(this, "Pesanan berhasil ditambahkan!");
             loadTableData();
             bersihkanForm();
@@ -286,11 +317,11 @@ public class PesananView extends JPanel{
 
         if (!validateInput()) return;
 
-        MenuView selectedMenu = (MenuView) cmbMenu.getSelectedItem();
+        MenuModel selectedMenu = (MenuModel) cmbMenu.getSelectedItem();
         int jumlah = Integer.parseInt(txtJumlah.getText().trim());
         double totalHarga = selectedMenu.getHarga() * jumlah;
 
-        PesananView pesanan = new PesananView();
+        PesananModel pesanan = new PesananModel();
         pesanan.setId(selectedId);
         pesanan.setNomorMeja(txtNomorMeja.getText().trim());
         pesanan.setMenuId(selectedMenu.getId());
@@ -298,13 +329,16 @@ public class PesananView extends JPanel{
         pesanan.setTotalHarga(totalHarga);
         pesanan.setStatus((String) cmbStatus.getSelectedItem());
 
-        if (pesananController.updatePesanan(pesanan)) {
-            JOptionPane.showMessageDialog(this, "Pesanan berhasil diupdate!");
-            loadTableData();
-            bersihkanForm();
+        // Note: Controller update method might be different allow only Status update based on previous findings.
+        // We assume updateStatus is available or we implement handling similar to previous.
+        // If controller only has updateStatus, we check here.
+        if (pesananController.updateStatus(selectedId, (String) cmbStatus.getSelectedItem()).contains("berhasil")) {
+             JOptionPane.showMessageDialog(this, "Status Pesanan berhasil diupdate! (Hanya Status)");
+             loadTableData();
+             bersihkanForm();
         } else {
-            JOptionPane.showMessageDialog(this, "Gagal mengupdate pesanan!",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+             JOptionPane.showMessageDialog(this, "Gagal mengupdate pesanan!",
+                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -324,7 +358,7 @@ public class PesananView extends JPanel{
                 JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            if (pesananController.hapusPesanan(selectedId)) {
+            if (pesananController.delete(selectedId).contains("dihapus")) {
                 JOptionPane.showMessageDialog(this, "Pesanan berhasil dihapus!");
                 loadTableData();
                 bersihkanForm();
@@ -338,13 +372,13 @@ public class PesananView extends JPanel{
     // Load data ke tabel
     private void loadTableData() {
         tableModel.setRowCount(0);
-        List<PesananView> pesananList = pesananController.getAllPesanan();
+        List<PesananModel> pesananList = pesananController.getAllPesananList();
 
-        for (PesananView p : pesananList) {
+        for (PesananModel p : pesananList) {
             Object[] row = {
                     p.getId(),
                     p.getNomorMeja(),
-                    p.getNamaMenu(),
+                    p.getNamaMenu(), // Sekarang sudah ada field ini di PesananModel
                     p.getJumlah(),
                     String.format("Rp %.2f", p.getTotalHarga()),
                     p.getStatus(),
@@ -363,8 +397,8 @@ public class PesananView extends JPanel{
 
             String namaMenu = (String) tableModel.getValueAt(selectedRow, 2);
             for (int i = 0; i < cmbMenu.getItemCount(); i++) {
-                MenuView m = cmbMenu.getItemAt(i);
-                if (m.getNamaMenu().equals(namaMenu)) {
+                MenuModel m = cmbMenu.getItemAt(i);
+                if (m.getNamaMenu().equalsIgnoreCase(namaMenu)) {
                     cmbMenu.setSelectedIndex(i);
                     break;
                 }

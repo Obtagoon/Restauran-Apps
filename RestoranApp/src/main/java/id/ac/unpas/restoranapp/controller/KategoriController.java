@@ -1,13 +1,15 @@
 package id.ac.unpas.restoranapp.controller;
 
-import java.sql.Statement;
-import id.ac.unpas.restoranapp.database.KoneksiDB;
-import id.ac.unpas.restoranapp.model.KategoriModel;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+
 import javax.swing.table.DefaultTableModel;
+
+import id.ac.unpas.restoranapp.database.KoneksiDB;
+import id.ac.unpas.restoranapp.model.KategoriModel;
 
 /**
  *
@@ -39,6 +41,28 @@ public class KategoriController {
             e.printStackTrace();
         }
         return model;
+    }
+
+    // Ambil semua data untuk ComboBox (List)
+    public java.util.List<KategoriModel> getAllKategoriList() {
+        java.util.List<KategoriModel> list = new java.util.ArrayList<>();
+        try {
+            String sql = "SELECT * FROM kategori";
+            Connection conn = KoneksiDB.configDB();
+            Statement stm = conn.createStatement();
+            ResultSet res = stm.executeQuery(sql);
+
+            while (res.next()) {
+                list.add(new KategoriModel(
+                    res.getInt("id"),
+                    res.getString("nama_kategori"),
+                    res.getString("deskripsi")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 
     //Tambah data baru

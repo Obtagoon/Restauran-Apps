@@ -10,6 +10,9 @@ public class PesananModel {
     private double totalHarga;
     private String status;
     private Timestamp tanggalPesan;
+    
+    // Field Tambahan untuk Display (bukan kolom tabel pesanan)
+    private String namaMenu;
 
     public PesananModel() {
     }
@@ -62,5 +65,12 @@ public class PesananModel {
     }
     public void setTanggalPesan(Timestamp tanggalPesan) { 
         this.tanggalPesan = tanggalPesan; 
+    }
+    
+    public String getNamaMenu() {
+        return namaMenu;
+    }
+    public void setNamaMenu(String namaMenu) {
+        this.namaMenu = namaMenu;
     }
 }
