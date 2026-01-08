@@ -28,6 +28,7 @@ import id.ac.unpas.restoranapp.controller.PesananController;
 import id.ac.unpas.restoranapp.model.MenuModel;
 import id.ac.unpas.restoranapp.model.PesananModel;
 
+// CLASS
 public class PesananView extends JPanel{
     private PesananController pesananController;
     private MenuController menuController;
